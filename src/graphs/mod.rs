@@ -33,21 +33,28 @@ fn main() {
 
 #[warn(dead_code)]
 
+#[warn(dead_code)]
+
 #[derive(Debug)]
 pub struct Vertex {
-    pub data: f32,
-    active: bool
+    pub data: f32
 }
 
 impl Vertex {
     pub fn new(x: f32) -> Self {
-        Vertex { data: x, active: true }
+        Vertex { data: x }
     }
 }
 
 #[derive(Debug)]
+pub enum GraphNode {
+    On(Vertex),
+    Off,
+}
+
+#[derive(Debug)]
 pub struct Graph {
-    vertices: Vec<Vertex>,
+    vertices: Vec<GraphNode>,
     adjacency_matrix: Vec<Vec<i8>>,
 }
 
@@ -60,40 +67,40 @@ impl Graph {
     }
 
     pub fn get_vertex(&mut self, index: usize) -> Option<&mut Vertex> {
-        if !self.vertices[index].active {
-            return None;
+        if let Some(GraphNode::On(vertex)) = self.vertices.get_mut(index) {
+            Some(vertex)
+        } else {
+            None
         }
-        self.vertices.get_mut(index)
     }
 
-    // returns the vertex index as a variable
     pub fn add_vertex(&mut self, x: Vertex) -> usize {
         let index = self.vertices.len();
-        self.vertices.push(x);
-        
-        // Expand the adjacency matrix
+        self.vertices.push(GraphNode::On(x));
+
+        // expand the adjacency matrix
         for row in self.adjacency_matrix.iter_mut() {
             row.push(0);
         }
         self.adjacency_matrix.push(vec![0; index + 1]);
-        
+
         index
     }
 
     pub fn add_edge(&mut self, from: usize, to: usize) {
-        if !self.vertices[from].active || !self.vertices[to].active { return; }
         if from < self.vertices.len() && to < self.vertices.len() {
-            self.adjacency_matrix[from][to] = 1;
+            if let (GraphNode::On(_), GraphNode::On(_)) = (&self.vertices[from], &self.vertices[to]) {
+                self.adjacency_matrix[from][to] = 1;
+            }
         }
     }
 
     pub fn remove_vertex(&mut self, index: usize) {
-        if index > self.vertices.len() {
-            return;
-        }
-        self.vertices[index].active = false;
-        for it in self.adjacency_matrix.iter_mut() {
-            it[index] = -1;
+        if index < self.vertices.len() {
+            self.vertices[index] = GraphNode::Off;
+            for it in self.adjacency_matrix.iter_mut() {
+                it[index] = -1;
+            }
         }
     }
 
@@ -104,36 +111,49 @@ impl Graph {
     }
 
     pub fn has_edge(&self, from: usize, to: usize) -> bool {
-        if !self.vertices[from].active || !self.vertices[to].active { return false; }
-        from < self.vertices.len() && to < self.vertices.len() && self.adjacency_matrix[from][to] == 1
+        if from < self.vertices.len() && to < self.vertices.len() {
+            if let (GraphNode::On(_), GraphNode::On(_)) = (&self.vertices[from], &self.vertices[to]) {
+                return self.adjacency_matrix[from][to] == 1;
+            }
+        }
+        false
     }
 
     pub fn neighbors(&self, index: usize) -> Vec<usize> {
-        if index < self.vertices.len() && self.vertices[index].active {
-            self.adjacency_matrix[index]
-                .iter()
-                .enumerate()
-                .filter(|(_, &weight)| weight == 1)
-                .map(|(i, _)| i)
-                .collect()
-        } else {
-            Vec::new()
+        if index < self.vertices.len() {
+            if let GraphNode::On(_) = &self.vertices[index] {
+                return self.adjacency_matrix[index]
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, &weight)| weight == 1)
+                    .map(|(i, _)| i)
+                    .collect();
+            }
         }
+        Vec::new()
     }
 
     pub fn print_vertices(&self) {
-        for v in 0..self.vertices.len() {
-            if !self.vertices[v].active {
-                continue;
-            }
-            println!("{} {:?}", v, &self.vertices[v]);
-            print!("Edges: ");
-            for i in 0..self.adjacency_matrix[v].len() {
-                if self.adjacency_matrix[v][i] > 0 {
-                    print!("{}, ", i);
+        for (v, vertex) in self.vertices.iter().enumerate() {
+            match vertex {
+                GraphNode::On(vertex) => {
+                    println!("{} {:?}", v, vertex);
+                    print!("Edges: ");
+                    for i in 0..self.adjacency_matrix[v].len() {
+                        if self.adjacency_matrix[v][i] > 0 {
+                            print!("{}, ", i);
+                        }
+                    }
+                    print!("\n\n");
                 }
+                GraphNode::Off => continue,
             }
-            print!("\n\n");
         }
+    }
+}
+
+impl Default for Graph {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -2,6 +2,10 @@
 mod graphs;
 
 fn main() {
+
+    // EXAMPLE USECASE
+    // 4 vertices with multiple edges that mutate the values of their neighbors
+
     let mut data: graphs::Graph = graphs::Graph::new();
 
     let vertex1: usize = data.add_vertex(graphs::Vertex::new(0.0));
@@ -27,6 +31,9 @@ fn main() {
     data.add_edge(vertex4, vertex2);
     data.add_edge(vertex4, vertex3);
     data.add_edge(vertex4, vertex4);
+
+    data.remove_vertex(vertex3);
+    data.remove_edge(vertex2, vertex4);
 
     let connected_vertices1: Vec<usize> = data.neighbors(vertex1);
     let connected_vertices2: Vec<usize> = data.neighbors(vertex2);
