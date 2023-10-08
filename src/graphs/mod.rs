@@ -45,7 +45,7 @@ impl Vertex {
 }
 
 #[derive(Debug)]
-pub enum GraphNode {
+enum GraphNode {
     On(Vertex),
     Off,
 }
