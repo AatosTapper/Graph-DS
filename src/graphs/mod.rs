@@ -33,8 +33,6 @@ fn main() {
 
 #[warn(dead_code)]
 
-#[warn(dead_code)]
-
 #[derive(Debug)]
 pub struct Vertex {
     pub data: f32
